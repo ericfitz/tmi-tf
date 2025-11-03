@@ -1,0 +1,33 @@
+[project]
+name = "tmi-tf"
+version = "0.1.0"
+description = "Terraform infrastructure analysis tool for TMI threat models"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.39.0",
+    "click>=8.1.7",
+    "python-dotenv>=1.0.0",
+    "gitpython>=3.1.40",
+    "requests>=2.31.0",
+    "PyGithub>=2.1.1",
+    # TMI client dependencies
+    "certifi>=2024.2.2",
+    "six>=1.16.0",
+    "python-dateutil>=2.9.0",
+    "setuptools>=70.0.0",
+    "urllib3>=2.0.0",
+]
+
+[project.scripts]
+tmi-tf = "tmi_tf.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]

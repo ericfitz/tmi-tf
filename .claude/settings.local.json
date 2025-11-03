@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/efitz/Projects/tmi-clients/python-client-generated/**)",
+      "Bash(tree:*)",
+      "Bash(cat:*)",
+      "Read(//Users/efitz/Projects/**)",
+      "Bash(mkdir:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

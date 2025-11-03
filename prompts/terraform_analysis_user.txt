@@ -1,0 +1,99 @@
+Repository: {repo_name}
+URL: {repo_url}
+
+Please analyze the following Terraform infrastructure code to support threat modeling activities.
+
+{documentation_summary}
+
+---
+
+## Terraform Configuration Files
+
+{terraform_contents}
+
+---
+
+## Analysis Request
+
+Please provide a comprehensive analysis of this Terraform infrastructure with the following sections:
+
+### 1. Infrastructure Inventory
+List all infrastructure resources by category:
+- Compute resources (VMs, containers, serverless functions)
+- Storage resources (databases, object storage, file systems)
+- Network resources (VPCs, subnets, load balancers, gateways)
+- Security resources (firewalls, security groups, WAF, IAM)
+- Other services (monitoring, DNS, CDN, etc.)
+
+For each resource, include:
+- Resource type and name
+- Key configuration details
+- Purpose (if apparent from code or documentation)
+
+### 2. Component Relationships
+Describe how components interact and depend on each other:
+- Which resources reference or depend on other resources
+- Network connectivity between components
+- Data flow paths
+- External dependencies
+
+### 3. Data Flows
+Map how data moves through the infrastructure:
+- Ingress points (how data enters the system)
+- Internal data flows (movement between components)
+- Egress points (how data leaves the system)
+- Data storage locations
+- Data transformation or processing stages
+
+### 4. Security Observations
+Identify security-relevant configurations and potential concerns:
+- **Public Exposure**: Internet-facing resources, public IPs, open security groups
+- **Authentication/Authorization**: IAM policies, roles, permissions, service accounts
+- **Encryption**: Data at rest and in transit, key management
+- **Network Security**: Firewalls, security groups, network segmentation
+- **Secrets Management**: How credentials and secrets are handled
+- **Logging/Monitoring**: Audit logs, security monitoring, alerting
+- **Compliance**: Configuration that may impact regulatory requirements
+- **Best Practices**: Alignment with or deviation from security best practices
+
+Highlight both positive security controls and areas of concern.
+
+### 5. Architecture Summary
+Provide a high-level summary (2-3 paragraphs) describing:
+- The overall purpose and architecture of this infrastructure
+- Key architectural patterns or approaches used
+- Main security boundaries and trust zones
+- Critical components from a threat modeling perspective
+
+### 6. Mermaid Architecture Diagram
+Create a mermaid diagram (using graph TD or graph LR) that visualizes:
+- Major infrastructure components
+- Network boundaries and security zones
+- Data flows (with arrows and labels)
+- External interfaces (users, external services, internet)
+- Key security controls (firewalls, encryption, etc.)
+
+Use this format:
+```mermaid
+graph TD
+    %% Define nodes
+    Internet[Internet]
+    LB[Load Balancer]
+    ...
+
+    %% Define relationships
+    Internet -->|HTTPS| LB
+    LB -->|HTTP| AppServers
+    ...
+
+    %% Style important nodes
+    classDef publicFacing fill:#ff9999
+    classDef sensitive fill:#ffcc99
+    class Internet,LB publicFacing
+```
+
+Keep the diagram clear and focused on the most important components and flows. Use subgraphs to represent security zones or boundaries when appropriate.
+
+---
+
+Please provide a thorough analysis that will help security teams understand the infrastructure and identify potential threats during threat modeling sessions.
