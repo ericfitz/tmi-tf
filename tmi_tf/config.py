@@ -15,7 +15,8 @@ class Config:
         # Load .env file from project root
         project_root = Path(__file__).parent.parent
         env_file = project_root / ".env"
-        load_dotenv(env_file)
+        # Override existing environment variables with .env file values
+        load_dotenv(env_file, override=True)
 
         # TMI Server Configuration
         self.tmi_server_url: str = os.getenv("TMI_SERVER_URL", "https://api.tmi.dev")
