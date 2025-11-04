@@ -20,7 +20,7 @@ from tmi_client.api_client import ApiClient  # noqa: E402
 from tmi_client.configuration import Configuration  # noqa: E402
 from tmi_client.models import (  # noqa: E402
     CreateDiagramRequest,
-    DfdDiagram,
+    DfdDiagramInput,
     DiagramListItem,
     Note,
     NoteInput,
@@ -259,8 +259,7 @@ class TMIClient:
             diagram = self.sub_resources_api.create_threat_model_diagram(
                 request, threat_model_id
             )
-            # Handle both dict and object responses
-            diagram_id = diagram["id"] if isinstance(diagram, dict) else diagram.id
+            diagram_id = diagram.id
             logger.info(f"Diagram created successfully with ID: {diagram_id}")
             return diagram_id
         except Exception as e:
@@ -279,41 +278,24 @@ class TMIClient:
             cells: List of cell objects in X6 format
 
         Returns:
-            Updated Diagram dict
+            Updated DfdDiagram dict
         """
         logger.info(
             f"Updating diagram {diagram_id} with {len(cells)} cells in threat model {threat_model_id}"
         )
         try:
-            # Create DfdDiagram object for update
-            # Note: The generated API client has issues with required fields:
-            # - id is marked readOnly in the API but required by BaseDiagram.__init__
-            # - We can't use normal constructor because it requires id/name/type
-            # Workaround: Manually construct the object bypassing __init__
-            dfd_diagram = DfdDiagram.__new__(DfdDiagram)
-            dfd_diagram._type = None
-            dfd_diagram._cells = None
-            dfd_diagram._id = None
-            dfd_diagram._name = None
-            dfd_diagram._created_at = None
-            dfd_diagram._modified_at = None
-            dfd_diagram._metadata = None
-            dfd_diagram._update_vector = None
-            dfd_diagram._image = None
-            dfd_diagram._description = None
-            dfd_diagram.discriminator = "type"
-
-            # Set required fields (don't set id - it's read-only)
-            dfd_diagram._type = "DFD-1.0.0"
-            dfd_diagram.cells = cells
-            dfd_diagram._name = "Infrastructure Data Flow Diagram"
+            # Create DfdDiagramInput object for update
+            dfd_diagram_input = DfdDiagramInput(
+                type="DFD-1.0.0",
+                name="Infrastructure Data Flow Diagram",
+                cells=cells,
+            )
 
             diagram = self.sub_resources_api.update_threat_model_diagram(
-                dfd_diagram, threat_model_id, diagram_id
+                dfd_diagram_input, threat_model_id, diagram_id
             )
             logger.info("Diagram updated successfully")
-            # Return as-is (should be a dict from the API)
-            return diagram if isinstance(diagram, dict) else diagram.to_dict()
+            return diagram.to_dict()
         except Exception as e:
             logger.error(f"Failed to update diagram: {e}")
             raise
@@ -350,11 +332,7 @@ class TMIClient:
         """
         diagrams = self.get_threat_model_diagrams(threat_model_id)
         for diagram in diagrams:
-            # Handle both dict and object responses
-            diagram_name = (
-                diagram["name"] if isinstance(diagram, dict) else diagram.name
-            )
-            if diagram_name == name:
+            if diagram.name == name:
                 return diagram
         return None
 
@@ -376,12 +354,7 @@ class TMIClient:
 
         if existing_diagram:
             logger.info(f"Diagram '{name}' already exists, updating...")
-            # Handle both dict and object responses
-            diagram_id = (
-                existing_diagram["id"]
-                if isinstance(existing_diagram, dict)
-                else existing_diagram.id
-            )
+            diagram_id = existing_diagram.id
             return self.update_diagram_cells(threat_model_id, diagram_id, cells)
         else:
             logger.info(f"Creating new diagram '{name}'...")
