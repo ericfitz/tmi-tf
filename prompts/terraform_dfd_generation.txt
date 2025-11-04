@@ -1,0 +1,174 @@
+You are analyzing cloud infrastructure defined in Terraform/OpenTofu to generate a structured data flow diagram.
+
+Based on the infrastructure analysis provided, extract and organize the components and data flows into a structured JSON format that will be used to generate a Data Flow Diagram (DFD).
+
+# Component Categories
+
+Categorize each infrastructure component into one of these types:
+
+1. **tenancy** - Cloud account/subscription level (AWS Account, Azure Subscription, OCI Tenancy)
+2. **container** - Resource grouping (AWS VPC, Azure Resource Group, OCI Compartment)
+3. **network** - Network boundaries (VCN, Subnet, Security Group, Network ACL, Route Table)
+4. **gateway** - Network gateways (Internet Gateway, NAT Gateway, VPN Gateway, Load Balancer)
+5. **compute** - Compute resources (EC2, VM, Container Instance, Function)
+6. **storage** - Data stores (RDS, S3, Blob Storage, Object Storage, Database)
+7. **actor** - External entities (Users, External Systems, Internet, Third-party APIs)
+
+# Hierarchy and Nesting
+
+Understanding proper containment relationships is critical:
+
+- **tenancy** contains everything else
+- **container** (if present) contains network, gateway, compute, and storage
+- **network.vcn** contains network.subnet
+- **network.subnet** contains compute and storage resources
+- **network.security_group** applies to (but doesn't contain) compute/storage resources
+- **gateway** resources sit at network boundaries
+- **actor** resources are external and not contained by anything
+
+# Output Format
+
+Generate a JSON object with two main sections: "components" and "flows".
+
+## Components
+
+Each component should include:
+- **id** - Unique identifier (use resource name or generate one)
+- **name** - Display name for the diagram
+- **type** - One of: tenancy, container, network, gateway, compute, storage, actor
+- **subtype** - Specific resource type (vpc, subnet, security_group, ec2, rds, etc.)
+- **description** - Brief description of the resource
+- **parent_id** - ID of the parent component (null for top-level tenancy)
+- **metadata** - Additional properties (region, availability_zone, tags, etc.)
+
+## Flows
+
+Each data flow should include:
+- **id** - Unique identifier for the flow
+- **name** - Description of the data flow
+- **source_id** - Component ID where data originates
+- **target_id** - Component ID where data goes
+- **protocol** - Protocol used (HTTPS, HTTP, SSH, TLS, TCP, UDP, etc.)
+- **port** - Port number if applicable
+- **data_type** - Type of data being transferred (API requests, web traffic, database queries, etc.)
+- **bidirectional** - Boolean indicating if this is a two-way communication
+
+# Special Considerations
+
+1. **Bidirectional Flows**: If communication goes both ways (e.g., HTTPS request/response), set "bidirectional": true. We will create two unidirectional edges from this.
+
+2. **Network Boundaries**: Create security-group, subnet, and VCN components as separate boundary objects even if they don't directly participate in flows.
+
+3. **Load Balancers**: Treat as gateway components that receive flows from actors and send flows to compute resources.
+
+4. **Internet Access**: Create an "actor" component called "Internet" for any public-facing resources.
+
+5. **Database Access**: Storage components (RDS, databases) should receive flows from compute components that access them.
+
+6. **Implicit Flows**: Infer flows even if not explicitly stated. For example:
+   - Web servers behind load balancers receive traffic from the load balancer
+   - Application servers query databases
+   - Instances in private subnets route through NAT gateways for outbound internet
+
+# Example Output Structure
+
+```json
+{
+  "components": [
+    {
+      "id": "tenancy-1",
+      "name": "AWS Account",
+      "type": "tenancy",
+      "subtype": "aws_account",
+      "description": "Primary AWS account for production workloads",
+      "parent_id": null,
+      "metadata": {
+        "account_id": "123456789012"
+      }
+    },
+    {
+      "id": "vpc-1",
+      "name": "Production VPC",
+      "type": "network",
+      "subtype": "vpc",
+      "description": "Main production VPC",
+      "parent_id": "tenancy-1",
+      "metadata": {
+        "cidr": "10.0.0.0/16",
+        "region": "us-west-2"
+      }
+    },
+    {
+      "id": "subnet-public-1",
+      "name": "Public Subnet AZ1",
+      "type": "network",
+      "subtype": "subnet",
+      "description": "Public subnet in availability zone 1",
+      "parent_id": "vpc-1",
+      "metadata": {
+        "cidr": "10.0.1.0/24",
+        "availability_zone": "us-west-2a"
+      }
+    },
+    {
+      "id": "alb-1",
+      "name": "Application Load Balancer",
+      "type": "gateway",
+      "subtype": "application_load_balancer",
+      "description": "Public-facing load balancer",
+      "parent_id": "subnet-public-1",
+      "metadata": {
+        "scheme": "internet-facing"
+      }
+    },
+    {
+      "id": "web-server-1",
+      "name": "Web Server Instance",
+      "type": "compute",
+      "subtype": "ec2",
+      "description": "Nginx web server",
+      "parent_id": "subnet-public-1",
+      "metadata": {
+        "instance_type": "t3.medium"
+      }
+    },
+    {
+      "id": "internet",
+      "name": "Internet",
+      "type": "actor",
+      "subtype": "external",
+      "description": "External users and systems",
+      "parent_id": null,
+      "metadata": {}
+    }
+  ],
+  "flows": [
+    {
+      "id": "flow-1",
+      "name": "HTTPS Web Traffic",
+      "source_id": "internet",
+      "target_id": "alb-1",
+      "protocol": "HTTPS",
+      "port": 443,
+      "data_type": "Web requests",
+      "bidirectional": true
+    },
+    {
+      "id": "flow-2",
+      "name": "HTTP Backend Traffic",
+      "source_id": "alb-1",
+      "target_id": "web-server-1",
+      "protocol": "HTTP",
+      "port": 80,
+      "data_type": "Proxied requests",
+      "bidirectional": true
+    }
+  ]
+}
+```
+
+# Instructions
+
+Analyze the infrastructure provided and generate the JSON output following the above format. Include ALL infrastructure components you can identify, properly nested according to cloud provider hierarchies. Infer reasonable data flows based on typical application architectures and the resources present.
+
+Return ONLY the JSON object with no additional commentary.

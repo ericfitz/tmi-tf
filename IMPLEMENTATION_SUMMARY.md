@@ -2,9 +2,9 @@
 
 ## Project: TMI Terraform Analysis Tool
 
-**Status**: ✅ Complete - Proof of Concept Ready
+**Status**: ✅ Complete - Proof of Concept Ready (Now with DFD Generation!)
 **Date**: November 3, 2025
-**Version**: 0.1.0
+**Version**: 0.2.0
 
 ---
 
@@ -18,6 +18,7 @@ A complete Python CLI application that automates Terraform infrastructure analys
 4. **Analyzes** infrastructure using Claude Sonnet 4.5 AI
 5. **Generates** comprehensive markdown reports with mermaid diagrams
 6. **Stores** analysis results as notes in TMI threat models
+7. **Creates** interactive Data Flow Diagrams (DFD) in TMI automatically ⚡ NEW!
 
 ---
 
@@ -57,16 +58,18 @@ A complete Python CLI application that automates Terraform infrastructure analys
 
 | Module | Purpose | Lines of Code |
 |--------|---------|---------------|
-| `cli.py` | Command-line interface and orchestration | ~350 |
-| `config.py` | Configuration management via .env | ~80 |
+| `cli.py` | Command-line interface and orchestration | ~320 |
+| `config.py` | Configuration management via .env | ~70 |
 | `auth.py` | Google OAuth 2.0 flow with token caching | ~250 |
-| `tmi_client_wrapper.py` | TMI API client wrapper | ~200 |
+| `tmi_client_wrapper.py` | TMI API client wrapper with diagram methods | ~360 |
 | `github_client.py` | GitHub API integration | ~150 |
 | `repo_analyzer.py` | Git sparse cloning and file extraction | ~250 |
 | `claude_analyzer.py` | Claude AI integration for analysis | ~200 |
 | `markdown_generator.py` | Report generation | ~180 |
+| `diagram_builder.py` | DFD cell generation and auto-layout ⚡ NEW | ~460 |
+| `dfd_llm_generator.py` | LLM-based structured data extraction ⚡ NEW | ~180 |
 
-**Total**: ~1,660 lines of Python code
+**Total**: ~2,420 lines of Python code
 
 ---
 
@@ -83,6 +86,10 @@ A complete Python CLI application that automates Terraform infrastructure analys
 - ✅ Mermaid diagram generation
 - ✅ Markdown report generation
 - ✅ TMI note creation/update
+- ✅ **Automatic Data Flow Diagram (DFD) generation** ⚡ NEW
+- ✅ **Interactive diagrams in AntV X6 v2 format** ⚡ NEW
+- ✅ **Hierarchical layout with auto-positioning** ⚡ NEW
+- ✅ **Security boundary nesting (tenancy/VPC/subnet)** ⚡ NEW
 
 ### CLI Commands
 
@@ -101,6 +108,7 @@ tmi-tf --version                     # Show version
 - `--output PATH` - Save to file
 - `--force-auth` - Force re-authentication
 - `--verbose` - Enable debug logging
+- `--skip-diagram` - Skip DFD generation ⚡ NEW
 
 ---
 
@@ -116,6 +124,7 @@ GITHUB_TOKEN=<optional>
 MAX_REPOS=3
 CLONE_TIMEOUT=300
 ANALYSIS_NOTE_NAME=Terraform Analysis Report
+DIAGRAM_NAME=Infrastructure Data Flow Diagram  # ⚡ NEW
 ```
 
 ---
@@ -434,6 +443,185 @@ uv run tmi-tf analyze <threat-model-id>
 5. **Review output** and iterate on prompts if needed
 6. **Run full analysis** when satisfied
 7. **Review note in TMI** threat model
+
+---
+
+## ⚡ NEW: Data Flow Diagram (DFD) Generation
+
+### Overview
+After creating the analysis note, the tool now automatically generates an interactive Data Flow Diagram in TMI using the AntV X6 v2 format.
+
+### How It Works
+
+```
+Markdown Analysis → LLM Extraction → DFD Builder → TMI API
+     (Claude)          (Structured      (X6 Cells)    (Diagram)
+                        JSON)
+```
+
+**Step 1: Structured Data Extraction**
+- Uses Claude Sonnet 4.5 with a specialized prompt ([terraform_dfd_generation.txt](terraform_dfd_generation.txt))
+- Extracts components (tenancy, VPC, subnets, compute, storage, actors)
+- Identifies data flows with protocols and ports
+- Returns structured JSON with hierarchical relationships
+
+**Step 2: DFD Building**
+- Maps component types to X6 shapes:
+  - Tenancy/VPC/Subnet → `security-boundary`
+  - Compute/Gateway → `process`
+  - Storage → `store`
+  - External Users → `actor`
+- Creates nested parent-child relationships
+- Assigns z-index for proper layering
+
+**Step 3: Auto-Layout Algorithm**
+- Positions boundaries hierarchically
+- Grid layout for children within parents
+- Automatic sizing to fit contents with padding
+- Ensures no overlap between components
+
+**Step 4: Flow Creation**
+- Creates edges between components
+- Bidirectional flows create two unidirectional edges
+- Adds labels with protocol/port information
+- Connects to node ports where applicable
+
+### DFD Cell Structure
+
+Each diagram contains cells in this format:
+
+```python
+# Security Boundary (e.g., VPC)
+{
+    "id": "uuid",
+    "shape": "security-boundary",
+    "x": 50, "y": 50,
+    "width": 800, "height": 600,
+    "zIndex": 2,
+    "attrs": {
+        "body": {"fill": "#E3F2FD", "stroke": "#2196F3"},
+        "text": {"text": "Production VPC"}
+    },
+    "parent": "tenancy-boundary-id"  # Nested in tenancy
+}
+
+# Compute Node (e.g., EC2)
+{
+    "id": "uuid",
+    "shape": "process",
+    "x": 100, "y": 100,
+    "width": 120, "height": 60,
+    "zIndex": 11,
+    "attrs": {
+        "body": {"fill": "#E1F5FE", "stroke": "#03A9F4"},
+        "text": {"text": "Web Server"}
+    },
+    "ports": {
+        "groups": {"in": {"position": "left"}, "out": {"position": "right"}},
+        "items": [{"id": "port-in", "group": "in"}, ...]
+    },
+    "parent": "subnet-id"  # Nested in subnet
+}
+
+# Data Flow (edge)
+{
+    "id": "uuid",
+    "shape": "edge",
+    "source": {"cell": "load-balancer-id", "port": "port-out"},
+    "target": {"cell": "web-server-id", "port": "port-in"},
+    "zIndex": 20,
+    "labels": [{"attrs": {"text": {"text": "HTTPS (443)"}}}],
+    "router": {"name": "manhattan"},
+    "connector": {"name": "rounded"}
+}
+```
+
+### Component Categorization
+
+The LLM categorizes infrastructure into 7 types:
+
+1. **tenancy** - Cloud account (AWS Account, Azure Subscription)
+2. **container** - Resource grouping (VPC, Resource Group)
+3. **network** - Network boundaries (Subnet, Security Group)
+4. **gateway** - Network gateways (ALB, NAT, VPN)
+5. **compute** - Compute resources (EC2, Lambda, Container)
+6. **storage** - Data stores (RDS, S3, Database)
+7. **actor** - External entities (Users, Internet, APIs)
+
+### Nesting Hierarchy
+
+```
+tenancy (z=1)
+  └─ container/VPC (z=2)
+      ├─ subnet (z=3)
+      │   ├─ compute (z=11)
+      │   └─ storage (z=11)
+      ├─ security-group (z=4)
+      └─ gateway (z=10)
+actor (z=11, no parent)
+```
+
+### Z-Index Strategy
+
+- **1-9**: Boundaries (outermost to innermost)
+- **10-19**: Nodes (gateways, processes, stores, actors)
+- **20-29**: Edges (on top for visibility)
+
+### Color Scheme
+
+Each component type has a distinct color:
+- Tenancy: Orange (#FF9800)
+- Container: Blue (#2196F3)
+- Network: Purple (#9C27B0)
+- Gateway: Green (#4CAF50)
+- Compute: Light Blue (#03A9F4)
+- Storage: Yellow (#FBC02D)
+- Actor: Red (#F44336)
+
+### Files Created
+
+- [prompts/terraform_dfd_generation.txt](prompts/terraform_dfd_generation.txt) - Specialized prompt for component extraction
+- [tmi_tf/diagram_builder.py](tmi_tf/diagram_builder.py) - DFD cell generation and layout
+- [tmi_tf/dfd_llm_generator.py](tmi_tf/dfd_llm_generator.py) - LLM integration for structured data
+
+### TMI API Integration
+
+New methods in `TMIClient`:
+- `create_diagram(threat_model_id, name)` → diagram_id
+- `update_diagram_cells(threat_model_id, diagram_id, cells)` → Diagram
+- `get_threat_model_diagrams(threat_model_id)` → List[DiagramListItem]
+- `find_diagram_by_name(threat_model_id, name)` → DiagramListItem
+- `create_or_update_diagram(threat_model_id, name, cells)` → Diagram
+
+### Error Handling
+
+- Diagram generation failures don't stop analysis
+- Falls back gracefully if structured data extraction fails
+- Continues without diagram if TMI API errors occur
+- All errors logged with clear messages
+
+### Example Workflow
+
+```bash
+# Analyze with automatic DFD generation
+uv run tmi-tf analyze <threat-model-id>
+
+# Skip diagram generation
+uv run tmi-tf analyze <threat-model-id> --skip-diagram
+
+# Dry run (no diagram, no note)
+uv run tmi-tf analyze <threat-model-id> --dry-run
+```
+
+### Performance Impact
+
+| Operation | Additional Time |
+|-----------|-----------------|
+| LLM extraction | ~30-60s |
+| Cell building | <1s |
+| Diagram creation | ~2-5s |
+
+**Total overhead**: ~30-65 seconds per analysis
 
 ---
 

@@ -8,8 +8,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import List, Optional
 
-from git import Repo
-from git.exc import GitCommandError
 
 from tmi_tf.config import Config
 

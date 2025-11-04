@@ -39,6 +39,9 @@ class Config:
         self.analysis_note_name: str = os.getenv(
             "ANALYSIS_NOTE_NAME", "Terraform Analysis Report"
         )
+        self.diagram_name: str = os.getenv(
+            "DIAGRAM_NAME", "Infrastructure Data Flow Diagram"
+        )
 
         # Token cache directory
         self.cache_dir = Path.home() / ".tmi-tf"

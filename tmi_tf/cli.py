@@ -2,12 +2,13 @@
 
 import logging
 import sys
-from pathlib import Path
 
 import click
 
 from tmi_tf.claude_analyzer import ClaudeAnalyzer
 from tmi_tf.config import get_config
+from tmi_tf.dfd_llm_generator import DFDLLMGenerator
+from tmi_tf.diagram_builder import DFDBuilder
 from tmi_tf.github_client import GitHubClient
 from tmi_tf.markdown_generator import MarkdownGenerator
 from tmi_tf.repo_analyzer import RepositoryAnalyzer
@@ -51,6 +52,11 @@ def cli():
 )
 @click.option("--force-auth", is_flag=True, help="Force new authentication (ignore cached token)")
 @click.option("--verbose", is_flag=True, help="Enable verbose logging")
+@click.option(
+    "--skip-diagram",
+    is_flag=True,
+    help="Skip generating data flow diagram",
+)
 def analyze(
     threat_model_id: str,
     max_repos: int,
@@ -58,6 +64,7 @@ def analyze(
     output: str,
     force_auth: bool,
     verbose: bool,
+    skip_diagram: bool,
 ):
     """
     Analyze Terraform repositories for a threat model.
@@ -180,6 +187,48 @@ def analyze(
                 print("=" * 80 + "\n")
                 print(markdown_content)
 
+        # Generate and create data flow diagram
+        if not skip_diagram and not dry_run:
+            logger.info("\n[8/7] Generating data flow diagram...")
+            try:
+                # Initialize DFD generator
+                dfd_generator = DFDLLMGenerator(
+                    api_key=config.anthropic_api_key,
+                    model="claude-sonnet-4-20250514"
+                )
+
+                # Generate structured data from the analysis
+                structured_data = dfd_generator.generate_structured_components(markdown_content)
+
+                if structured_data:
+                    # Build diagram cells
+                    builder = DFDBuilder(
+                        components=structured_data["components"],
+                        flows=structured_data["flows"]
+                    )
+                    cells = builder.build_cells()
+
+                    # Create or update diagram in TMI
+                    diagram = tmi_client.create_or_update_diagram(
+                        threat_model_id=threat_model_id,
+                        name=config.diagram_name,
+                        cells=cells
+                    )
+                    # Handle both dict and object responses
+                    diagram_id = diagram["id"] if isinstance(diagram, dict) else diagram.id
+                    logger.info(f"Diagram created/updated successfully: {diagram_id}")
+                    logger.info(f"Diagram contains {len(cells)} cells")
+                else:
+                    logger.warning("Failed to generate structured data for diagram")
+
+            except Exception as e:
+                # Don't fail the entire analysis if diagram generation fails
+                logger.error(f"Failed to generate diagram: {e}")
+                logger.info("Continuing without diagram...")
+
+        elif skip_diagram:
+            logger.info("\n[8/7] Skipping diagram generation (--skip-diagram)")
+
         logger.info("\n" + "=" * 80)
         logger.info("Analysis complete!")
         logger.info("=" * 80)
@@ -195,7 +244,7 @@ def auth():
     try:
         logger.info("Authenticating with TMI server...")
         config = get_config()
-        tmi_client = TMIClient.create_authenticated(config, force_refresh=True)
+        TMIClient.create_authenticated(config, force_refresh=True)
         logger.info("Authentication successful!")
         logger.info("Token cached for future use.")
     except Exception as e:
@@ -262,6 +311,7 @@ def config_info():
         print(f"Max Repositories: {config.max_repos}")
         print(f"Clone Timeout: {config.clone_timeout}s")
         print(f"Note Name: {config.analysis_note_name}")
+        print(f"Diagram Name: {config.diagram_name}")
         print(f"GitHub Token: {'Configured' if config.github_token else 'Not configured'}")
         print(f"Anthropic API Key: {'Configured' if config.anthropic_api_key else 'Not configured'}")
         print(f"Cache Directory: {config.cache_dir}")

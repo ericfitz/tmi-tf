@@ -15,13 +15,21 @@ else:
         "Please ensure it's available at ~/Projects/tmi-clients/python-client-generated"
     )
 
-import tmi_client
-from tmi_client.api_client import ApiClient
-from tmi_client.configuration import Configuration
-from tmi_client.models import Note, NoteInput, Repository, ThreatModel
+import tmi_client  # noqa: E402
+from tmi_client.api_client import ApiClient  # noqa: E402
+from tmi_client.configuration import Configuration  # noqa: E402
+from tmi_client.models import (  # noqa: E402
+    CreateDiagramRequest,
+    DfdDiagram,
+    DiagramListItem,
+    Note,
+    NoteInput,
+    Repository,
+    ThreatModel,
+)
 
-from tmi_tf.auth import TMIAuthenticator
-from tmi_tf.config import Config
+from tmi_tf.auth import TMIAuthenticator  # noqa: E402
+from tmi_tf.config import Config  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +186,7 @@ class TMIClient:
             note = self.sub_resources_api.update_threat_model_note(
                 threat_model_id, note_id, note_input
             )
-            logger.info(f"Note updated successfully")
+            logger.info("Note updated successfully")
             return note
         except Exception as e:
             logger.error(f"Failed to update note: {e}")
@@ -226,3 +234,133 @@ class TMIClient:
         else:
             logger.info(f"Creating new note '{name}'...")
             return self.create_note(threat_model_id, name, content, description)
+
+    def create_diagram(self, threat_model_id: str, name: str) -> str:
+        """
+        Create a new diagram in a threat model.
+
+        Args:
+            threat_model_id: Threat model UUID
+            name: Diagram name
+
+        Returns:
+            Created diagram ID
+        """
+        logger.info(f"Creating diagram '{name}' in threat model {threat_model_id}")
+        try:
+            request = CreateDiagramRequest(name=name, type="DFD-1.0.0")
+            diagram = self.sub_resources_api.create_threat_model_diagram(
+                request, threat_model_id
+            )
+            # Handle both dict and object responses
+            diagram_id = diagram["id"] if isinstance(diagram, dict) else diagram.id
+            logger.info(f"Diagram created successfully with ID: {diagram_id}")
+            return diagram_id
+        except Exception as e:
+            logger.error(f"Failed to create diagram: {e}")
+            raise
+
+    def update_diagram_cells(
+        self, threat_model_id: str, diagram_id: str, cells: List[dict]
+    ) -> dict:
+        """
+        Update diagram with cells.
+
+        Args:
+            threat_model_id: Threat model UUID
+            diagram_id: Diagram UUID
+            cells: List of cell objects in X6 format
+
+        Returns:
+            Updated Diagram dict
+        """
+        logger.info(
+            f"Updating diagram {diagram_id} with {len(cells)} cells in threat model {threat_model_id}"
+        )
+        try:
+            # Create DfdDiagram object with cells and id
+            # Note: type and cells are positional args, others are kwargs from BaseDiagram
+            dfd_diagram = DfdDiagram(
+                type="DFD-1.0.0",
+                cells=cells,
+                id=diagram_id,
+                name="Infrastructure Data Flow Diagram"
+            )
+
+            diagram = self.sub_resources_api.update_threat_model_diagram(
+                dfd_diagram, threat_model_id, diagram_id
+            )
+            logger.info("Diagram updated successfully")
+            # Return as-is (should be a dict from the API)
+            return diagram if isinstance(diagram, dict) else diagram.to_dict()
+        except Exception as e:
+            logger.error(f"Failed to update diagram: {e}")
+            raise
+
+    def get_threat_model_diagrams(self, threat_model_id: str) -> List[DiagramListItem]:
+        """
+        Get all diagrams for a threat model.
+
+        Args:
+            threat_model_id: Threat model UUID
+
+        Returns:
+            List of DiagramListItem objects
+        """
+        logger.info(f"Fetching diagrams for threat model: {threat_model_id}")
+        try:
+            diagrams = self.sub_resources_api.get_threat_model_diagrams(threat_model_id)
+            logger.info(f"Retrieved {len(diagrams)} diagrams")
+            return diagrams
+        except Exception as e:
+            logger.error(f"Failed to get diagrams: {e}")
+            raise
+
+    def find_diagram_by_name(
+        self, threat_model_id: str, name: str
+    ) -> Optional[dict]:
+        """
+        Find a diagram by name in a threat model.
+
+        Args:
+            threat_model_id: Threat model UUID
+            name: Diagram name to search for
+
+        Returns:
+            Diagram dict if found, None otherwise
+        """
+        diagrams = self.get_threat_model_diagrams(threat_model_id)
+        for diagram in diagrams:
+            # Handle both dict and object responses
+            diagram_name = diagram["name"] if isinstance(diagram, dict) else diagram.name
+            if diagram_name == name:
+                return diagram
+        return None
+
+    def create_or_update_diagram(
+        self, threat_model_id: str, name: str, cells: List[dict]
+    ) -> dict:
+        """
+        Create a new diagram or update existing one with the same name.
+
+        Args:
+            threat_model_id: Threat model UUID
+            name: Diagram name
+            cells: List of cell objects in X6 format
+
+        Returns:
+            Created or updated Diagram dict
+        """
+        existing_diagram = self.find_diagram_by_name(threat_model_id, name)
+
+        if existing_diagram:
+            logger.info(f"Diagram '{name}' already exists, updating...")
+            # Handle both dict and object responses
+            diagram_id = existing_diagram["id"] if isinstance(existing_diagram, dict) else existing_diagram.id
+            return self.update_diagram_cells(
+                threat_model_id, diagram_id, cells
+            )
+        else:
+            logger.info(f"Creating new diagram '{name}'...")
+            diagram_id = self.create_diagram(threat_model_id, name)
+            return self.update_diagram_cells(threat_model_id, diagram_id, cells)
