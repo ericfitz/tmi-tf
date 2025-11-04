@@ -56,18 +56,18 @@ A complete Python CLI application that automates Terraform infrastructure analys
 
 ### Modules
 
-| Module | Purpose | Lines of Code |
-|--------|---------|---------------|
-| `cli.py` | Command-line interface and orchestration | ~320 |
-| `config.py` | Configuration management via .env | ~70 |
-| `auth.py` | Google OAuth 2.0 flow with token caching | ~250 |
-| `tmi_client_wrapper.py` | TMI API client wrapper with diagram methods | ~360 |
-| `github_client.py` | GitHub API integration | ~150 |
-| `repo_analyzer.py` | Git sparse cloning and file extraction | ~250 |
-| `claude_analyzer.py` | Claude AI integration for analysis | ~200 |
-| `markdown_generator.py` | Report generation | ~180 |
-| `diagram_builder.py` | DFD cell generation and auto-layout ⚡ NEW | ~460 |
-| `dfd_llm_generator.py` | LLM-based structured data extraction ⚡ NEW | ~180 |
+| Module                  | Purpose                                     | Lines of Code |
+| ----------------------- | ------------------------------------------- | ------------- |
+| `cli.py`                | Command-line interface and orchestration    | ~320          |
+| `config.py`             | Configuration management via .env           | ~70           |
+| `auth.py`               | Google OAuth 2.0 flow with token caching    | ~250          |
+| `tmi_client_wrapper.py` | TMI API client wrapper with diagram methods | ~360          |
+| `github_client.py`      | GitHub API integration                      | ~150          |
+| `repo_analyzer.py`      | Git sparse cloning and file extraction      | ~250          |
+| `claude_analyzer.py`    | Claude AI integration for analysis          | ~200          |
+| `markdown_generator.py` | Report generation                           | ~180          |
+| `diagram_builder.py`    | DFD cell generation and auto-layout ⚡ NEW  | ~460          |
+| `dfd_llm_generator.py`  | LLM-based structured data extraction ⚡ NEW | ~180          |
 
 **Total**: ~2,420 lines of Python code
 
@@ -76,6 +76,7 @@ A complete Python CLI application that automates Terraform infrastructure analys
 ## Features Implemented
 
 ### Core Functionality
+
 - ✅ Google OAuth authentication with TMI
 - ✅ Token caching (stored in ~/.tmi-tf/token.json)
 - ✅ Threat model querying via TMI API
@@ -103,6 +104,7 @@ tmi-tf --version                     # Show version
 ```
 
 ### Command Options
+
 - `--max-repos N` - Limit number of repos to analyze
 - `--dry-run` - Analyze without creating note
 - `--output PATH` - Save to file
@@ -132,32 +134,38 @@ DIAGRAM_NAME=Infrastructure Data Flow Diagram  # ⚡ NEW
 ## Key Design Decisions
 
 ### 1. UV Package Manager
+
 - Using `uv` for fast dependency management
 - No manual virtual environment management
 - Inline script support for future extensions
 
 ### 2. OAuth with Token Caching
+
 - Caches JWT tokens in ~/.tmi-tf/token.json
 - Expires tokens automatically
 - Supports force refresh
 
 ### 3. Sparse Git Cloning
+
 - Only fetches .tf, .tfvars, and documentation files
 - Uses --depth=1 for speed
 - Configurable timeout
 
 ### 4. Claude Integration
+
 - Uses Claude Sonnet 4.5 (latest model)
 - Comprehensive prompt templates in separate files
 - Token estimation to avoid exceeding limits
 - Always generates mermaid diagrams
 
 ### 5. Error Handling
+
 - Graceful degradation (continues if one repo fails)
 - Detailed logging at INFO/DEBUG levels
 - Cleanup of temp directories guaranteed
 
 ### 6. TMI Integration
+
 - Smart note creation/update (checks for existing)
 - Full TMI Python client integration
 - Proper authentication via Bearer tokens
@@ -195,6 +203,7 @@ Generated markdown includes:
 ## Dependencies
 
 ### Runtime Dependencies
+
 - `anthropic` - Claude AI API
 - `click` - CLI framework
 - `python-dotenv` - Environment management
@@ -204,6 +213,7 @@ Generated markdown includes:
 - `six`, `python-dateutil`, `certifi`, `urllib3` - TMI client deps
 
 ### Development Dependencies
+
 - `pytest` - Testing framework
 - `black` - Code formatting
 - `ruff` - Linting
@@ -213,20 +223,23 @@ Generated markdown includes:
 ## Testing Status
 
 ### Manual Tests Completed
+
 - ✅ Installation with UV
 - ✅ CLI help and version commands
 - ✅ Config loading and validation
 - ✅ Module imports and dependencies
 
-### Integration Testing Required
-- ⚠️ Full OAuth flow (requires real TMI access)
-- ⚠️ Repository cloning (requires test repos)
-- ⚠️ Claude analysis (requires API key)
-- ⚠️ End-to-end workflow (requires all of above)
+### Integration Testing Requirements
+
+- ✅ Full OAuth flow (requires real TMI access)
+- ✅ Repository cloning (requires test repos)
+- ✅ Claude analysis (requires API key)
+- ✅ End-to-end workflow (requires all of above)
 
 ### Recommended Tests Before Production Use
-1. Test with actual TMI threat model
-2. Verify OAuth callback handling
+
+1. ✅ Test with actual TMI threat model
+2. ✅ Verify OAuth callback handling
 3. Test with various Terraform configurations
 4. Validate Claude token limits
 5. Test error handling scenarios
@@ -237,23 +250,28 @@ Generated markdown includes:
 ## Known Limitations
 
 1. **Proof of Concept Quality**
+
    - Not production-hardened
    - Limited error recovery
    - No resume capability
 
 2. **GitHub Only**
+
    - Only supports GitHub repositories
    - No GitLab, Bitbucket, etc.
 
 3. **Sequential Processing**
+
    - Repositories analyzed one at a time
    - Could be parallelized for speed
 
 4. **Token Limits**
+
    - Very large Terraform files may exceed Claude's context window
    - No automatic chunking strategy
 
 5. **No State Management**
+
    - If analysis fails midway, must restart from beginning
    - No partial result caching
 
@@ -266,6 +284,7 @@ Generated markdown includes:
 ## Future Enhancements
 
 ### High Priority
+
 - [ ] Add automated tests (pytest)
 - [ ] Implement retry logic for API failures
 - [ ] Add progress indicators for long operations
@@ -273,6 +292,7 @@ Generated markdown includes:
 - [ ] Better error messages with recovery suggestions
 
 ### Medium Priority
+
 - [ ] Parallel repository processing
 - [ ] Resume capability with state file
 - [ ] Terraform validation with terraform CLI
@@ -281,6 +301,7 @@ Generated markdown includes:
 - [ ] Filtering rules for repositories
 
 ### Low Priority
+
 - [ ] Web UI for reports
 - [ ] PDF export
 - [ ] Scheduled analysis runs
@@ -292,6 +313,7 @@ Generated markdown includes:
 ## Documentation
 
 ### Created Files
+
 - ✅ `README.md` - Comprehensive documentation (8KB)
 - ✅ `QUICKSTART.md` - Quick start guide (4KB)
 - ✅ `.env.example` - Example configuration
@@ -299,6 +321,7 @@ Generated markdown includes:
 - ✅ Docstrings for all functions
 
 ### Prompt Templates
+
 - ✅ `prompts/terraform_analysis_system.txt` - System prompt for Claude
 - ✅ `prompts/terraform_analysis_user.txt` - User prompt template
 
@@ -333,17 +356,20 @@ uv run tmi-tf analyze <threat-model-id>
 ## Security Considerations
 
 ### Secrets Management
+
 - ✅ `.env` excluded from git
 - ✅ Token cache in home directory only
 - ✅ No secrets in code or logs
 - ✅ API keys validated at startup
 
 ### Network Security
+
 - ✅ All API calls use HTTPS
 - ✅ OAuth callback on localhost only
 - ✅ No external data storage
 
 ### Cleanup
+
 - ✅ Temporary directories cleaned up
 - ✅ Git clones removed after analysis
 - ✅ No persistent local storage except cache
@@ -354,16 +380,17 @@ uv run tmi-tf analyze <threat-model-id>
 
 ### Typical Analysis Times
 
-| Operation | Time (per repo) |
-|-----------|-----------------|
-| Authentication | 5-30s (cached: instant) |
-| Repository clone | 10-60s |
-| Claude analysis | 30-120s |
-| Note creation | 2-5s |
+| Operation        | Time (per repo)         |
+| ---------------- | ----------------------- |
+| Authentication   | 5-30s (cached: instant) |
+| Repository clone | 10-60s                  |
+| Claude analysis  | 30-120s                 |
+| Note creation    | 2-5s                    |
 
 **Total for 3 repos**: 2-10 minutes
 
 ### Resource Usage
+
 - **Memory**: ~100-200MB
 - **Disk**: Temp files up to repo size (cleaned up)
 - **Network**: Download .tf files + API calls
@@ -387,33 +414,41 @@ uv run tmi-tf analyze <threat-model-id>
 ## Questions Answered from Planning
 
 ### Authentication
+
 - ✅ Google OAuth with IDP "google"
 - ✅ Standard OAuth 2.0 authorization code flow
 - ✅ TMI server: https://api.tmi.dev
 
 ### Repository Filtering
+
 - ✅ Filters by GitHub URL domain
 - ✅ Attempts to detect .tf files via GitHub API
 - ✅ Falls back to clone + check if API unavailable
 
 ### CLI Framework
+
 - ✅ Using Click (good UX, widely adopted)
 
 ### Python Environment
+
 - ✅ pyproject.toml with UV
 - ✅ No manual venv management
 
 ### Mermaid Diagrams
+
 - ✅ Always included in output
 
 ### GitHub API
+
 - ✅ Integrated for repo metadata
 - ✅ Optional token for higher limits
 
 ### Max Repos
+
 - ✅ Configurable, default 3
 
 ### Terraform Parsing
+
 - ✅ Raw content passed to Claude (no structural parsing)
 
 ---
@@ -421,6 +456,7 @@ uv run tmi-tf analyze <threat-model-id>
 ## Success Criteria
 
 ✅ **All requirements met:**
+
 1. ✅ Authenticates with Google Sign-In
 2. ✅ Uses credentials for TMI API calls
 3. ✅ Queries threat model from command line
@@ -449,6 +485,7 @@ uv run tmi-tf analyze <threat-model-id>
 ## ⚡ NEW: Data Flow Diagram (DFD) Generation
 
 ### Overview
+
 After creating the analysis note, the tool now automatically generates an interactive Data Flow Diagram in TMI using the AntV X6 v2 format.
 
 ### How It Works
@@ -460,12 +497,14 @@ Markdown Analysis → LLM Extraction → DFD Builder → TMI API
 ```
 
 **Step 1: Structured Data Extraction**
+
 - Uses Claude Sonnet 4.5 with a specialized prompt ([terraform_dfd_generation.txt](terraform_dfd_generation.txt))
 - Extracts components (tenancy, VPC, subnets, compute, storage, actors)
 - Identifies data flows with protocols and ports
 - Returns structured JSON with hierarchical relationships
 
 **Step 2: DFD Building**
+
 - Maps component types to X6 shapes:
   - Tenancy/VPC/Subnet → `security-boundary`
   - Compute/Gateway → `process`
@@ -475,12 +514,14 @@ Markdown Analysis → LLM Extraction → DFD Builder → TMI API
 - Assigns z-index for proper layering
 
 **Step 3: Auto-Layout Algorithm**
+
 - Positions boundaries hierarchically
 - Grid layout for children within parents
 - Automatic sizing to fit contents with padding
 - Ensures no overlap between components
 
 **Step 4: Flow Creation**
+
 - Creates edges between components
 - Bidirectional flows create two unidirectional edges
 - Adds labels with protocol/port information
@@ -570,6 +611,7 @@ actor (z=11, no parent)
 ### Color Scheme
 
 Each component type has a distinct color:
+
 - Tenancy: Orange (#FF9800)
 - Container: Blue (#2196F3)
 - Network: Purple (#9C27B0)
@@ -587,6 +629,7 @@ Each component type has a distinct color:
 ### TMI API Integration
 
 New methods in `TMIClient`:
+
 - `create_diagram(threat_model_id, name)` → diagram_id
 - `update_diagram_cells(threat_model_id, diagram_id, cells)` → Diagram
 - `get_threat_model_diagrams(threat_model_id)` → List[DiagramListItem]
@@ -615,11 +658,11 @@ uv run tmi-tf analyze <threat-model-id> --dry-run
 
 ### Performance Impact
 
-| Operation | Additional Time |
-|-----------|-----------------|
-| LLM extraction | ~30-60s |
-| Cell building | <1s |
-| Diagram creation | ~2-5s |
+| Operation        | Additional Time |
+| ---------------- | --------------- |
+| LLM extraction   | ~30-60s         |
+| Cell building    | <1s             |
+| Diagram creation | ~2-5s           |
 
 **Total overhead**: ~30-65 seconds per analysis
 
@@ -628,6 +671,7 @@ uv run tmi-tf analyze <threat-model-id> --dry-run
 ## Conclusion
 
 The TMI Terraform Analysis Tool is a **complete, functional proof of concept** that meets all specified requirements. It successfully integrates:
+
 - TMI threat modeling platform
 - Google OAuth authentication
 - GitHub API
