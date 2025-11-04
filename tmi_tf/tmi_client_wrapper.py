@@ -63,7 +63,9 @@ class TMIClient:
         logger.info(f"TMI client initialized for {config.tmi_server_url}")
 
     @classmethod
-    def create_authenticated(cls, config: Config, force_refresh: bool = False) -> "TMIClient":
+    def create_authenticated(
+        cls, config: Config, force_refresh: bool = False
+    ) -> "TMIClient":
         """
         Create authenticated TMI client.
 
@@ -165,7 +167,12 @@ class TMIClient:
             raise
 
     def update_note(
-        self, threat_model_id: str, note_id: str, name: str, content: str, description: str = ""
+        self,
+        threat_model_id: str,
+        note_id: str,
+        name: str,
+        content: str,
+        description: str = "",
     ) -> Note:
         """
         Update an existing note.
@@ -278,14 +285,28 @@ class TMIClient:
             f"Updating diagram {diagram_id} with {len(cells)} cells in threat model {threat_model_id}"
         )
         try:
-            # Create DfdDiagram object with cells and id
-            # Note: type and cells are positional args, others are kwargs from BaseDiagram
-            dfd_diagram = DfdDiagram(
-                type="DFD-1.0.0",
-                cells=cells,
-                id=diagram_id,
-                name="Infrastructure Data Flow Diagram"
-            )
+            # Create DfdDiagram object for update
+            # Note: The generated API client has issues with required fields:
+            # - id is marked readOnly in the API but required by BaseDiagram.__init__
+            # - We can't use normal constructor because it requires id/name/type
+            # Workaround: Manually construct the object bypassing __init__
+            dfd_diagram = DfdDiagram.__new__(DfdDiagram)
+            dfd_diagram._type = None
+            dfd_diagram._cells = None
+            dfd_diagram._id = None
+            dfd_diagram._name = None
+            dfd_diagram._created_at = None
+            dfd_diagram._modified_at = None
+            dfd_diagram._metadata = None
+            dfd_diagram._update_vector = None
+            dfd_diagram._image = None
+            dfd_diagram._description = None
+            dfd_diagram.discriminator = "type"
+
+            # Set required fields (don't set id - it's read-only)
+            dfd_diagram._type = "DFD-1.0.0"
+            dfd_diagram.cells = cells
+            dfd_diagram._name = "Infrastructure Data Flow Diagram"
 
             diagram = self.sub_resources_api.update_threat_model_diagram(
                 dfd_diagram, threat_model_id, diagram_id
@@ -316,9 +337,7 @@ class TMIClient:
             logger.error(f"Failed to get diagrams: {e}")
             raise
 
-    def find_diagram_by_name(
-        self, threat_model_id: str, name: str
-    ) -> Optional[dict]:
+    def find_diagram_by_name(self, threat_model_id: str, name: str) -> Optional[dict]:
         """
         Find a diagram by name in a threat model.
 
@@ -332,7 +351,9 @@ class TMIClient:
         diagrams = self.get_threat_model_diagrams(threat_model_id)
         for diagram in diagrams:
             # Handle both dict and object responses
-            diagram_name = diagram["name"] if isinstance(diagram, dict) else diagram.name
+            diagram_name = (
+                diagram["name"] if isinstance(diagram, dict) else diagram.name
+            )
             if diagram_name == name:
                 return diagram
         return None
@@ -356,10 +377,12 @@ class TMIClient:
         if existing_diagram:
             logger.info(f"Diagram '{name}' already exists, updating...")
             # Handle both dict and object responses
-            diagram_id = existing_diagram["id"] if isinstance(existing_diagram, dict) else existing_diagram.id
-            return self.update_diagram_cells(
-                threat_model_id, diagram_id, cells
+            diagram_id = (
+                existing_diagram["id"]
+                if isinstance(existing_diagram, dict)
+                else existing_diagram.id
             )
+            return self.update_diagram_cells(threat_model_id, diagram_id, cells)
         else:
             logger.info(f"Creating new diagram '{name}'...")
             diagram_id = self.create_diagram(threat_model_id, name)

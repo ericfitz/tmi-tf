@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class DFDLLMGenerator:
     """Generates structured DFD data using Claude LLM."""
 
-    def __init__(self, api_key: str, model: str = "claude-sonnet-4-20250514"):
+    def __init__(self, api_key: str, model: str = "claude-sonnet-4-5"):
         """
         Initialize the DFD LLM generator.
 
@@ -32,7 +32,9 @@ class DFDLLMGenerator:
 
     def _load_prompt_template(self):
         """Load the DFD generation prompt template."""
-        prompt_path = Path(__file__).parent.parent / "prompts" / "terraform_dfd_generation.txt"
+        prompt_path = (
+            Path(__file__).parent.parent / "prompts" / "terraform_dfd_generation.txt"
+        )
 
         try:
             with open(prompt_path, "r", encoding="utf-8") as f:
@@ -65,12 +67,7 @@ class DFDLLMGenerator:
                 model=self.model,
                 max_tokens=16000,
                 temperature=0,  # Deterministic output for structured data
-                messages=[
-                    {
-                        "role": "user",
-                        "content": full_prompt
-                    }
-                ]
+                messages=[{"role": "user", "content": full_prompt}],
             )
 
             # Extract the response content
@@ -92,9 +89,11 @@ class DFDLLMGenerator:
                 logger.error("Invalid structure in generated data")
                 return None
 
-            logger.info("Successfully generated %d components and %d flows",
-                       len(structured_data.get("components", [])),
-                       len(structured_data.get("flows", [])))
+            logger.info(
+                "Successfully generated %d components and %d flows",
+                len(structured_data.get("components", [])),
+                len(structured_data.get("flows", [])),
+            )
 
             return structured_data
 
@@ -134,7 +133,7 @@ class DFDLLMGenerator:
                 continue
 
         # Try finding JSON object in text
-        json_pattern = r'\{[\s\S]*\}'
+        json_pattern = r"\{[\s\S]*\}"
         matches = re.findall(json_pattern, text)
 
         for match in matches:
@@ -203,14 +202,24 @@ class DFDLLMGenerator:
                 logger.error("Component %d missing required field: %s", index, field)
                 return False
 
-        valid_types = ["tenancy", "container", "network", "gateway", "compute", "storage", "actor"]
+        valid_types = [
+            "tenancy",
+            "container",
+            "network",
+            "gateway",
+            "compute",
+            "storage",
+            "actor",
+        ]
         if component["type"] not in valid_types:
             logger.error("Component %d has invalid type: %s", index, component["type"])
             return False
 
         return True
 
-    def _validate_flow(self, flow: Dict[str, Any], index: int, component_ids: set) -> bool:
+    def _validate_flow(
+        self, flow: Dict[str, Any], index: int, component_ids: set
+    ) -> bool:
         """
         Validate a single flow.
 
@@ -231,13 +240,15 @@ class DFDLLMGenerator:
 
         # Validate source and target exist
         if flow["source_id"] not in component_ids:
-            logger.error("Flow %d references non-existent source: %s",
-                        index, flow["source_id"])
+            logger.error(
+                "Flow %d references non-existent source: %s", index, flow["source_id"]
+            )
             return False
 
         if flow["target_id"] not in component_ids:
-            logger.error("Flow %d references non-existent target: %s",
-                        index, flow["target_id"])
+            logger.error(
+                "Flow %d references non-existent target: %s", index, flow["target_id"]
+            )
             return False
 
         return True

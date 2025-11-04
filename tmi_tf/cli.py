@@ -50,7 +50,9 @@ def cli():
     default=None,
     help="Save markdown output to file (in addition to or instead of TMI note)",
 )
-@click.option("--force-auth", is_flag=True, help="Force new authentication (ignore cached token)")
+@click.option(
+    "--force-auth", is_flag=True, help="Force new authentication (ignore cached token)"
+)
 @click.option("--verbose", is_flag=True, help="Enable verbose logging")
 @click.option(
     "--skip-diagram",
@@ -129,19 +131,25 @@ def analyze(
         analyses = []
 
         for i, repo in enumerate(repos_to_analyze, 1):
-            logger.info(f"\n--- Repository {i}/{len(repos_to_analyze)}: {repo.name} ---")
+            logger.info(
+                f"\n--- Repository {i}/{len(repos_to_analyze)}: {repo.name} ---"
+            )
             logger.info(f"URL: {repo.uri}")
 
             try:
                 # Clone repository
                 repo_name = repo_analyzer.extract_repository_name(repo.uri)
-                with repo_analyzer.clone_repository_sparse(repo.uri, repo_name) as tf_repo:
+                with repo_analyzer.clone_repository_sparse(
+                    repo.uri, repo_name
+                ) as tf_repo:
                     if tf_repo:
                         # Analyze with Claude
                         analysis = claude_analyzer.analyze_repository(tf_repo)
                         analyses.append(analysis)
                     else:
-                        logger.warning(f"Skipping {repo.name} - no Terraform files found")
+                        logger.warning(
+                            f"Skipping {repo.name} - no Terraform files found"
+                        )
 
             except Exception as e:
                 logger.error(f"Failed to analyze {repo.name}: {e}")
@@ -193,18 +201,19 @@ def analyze(
             try:
                 # Initialize DFD generator
                 dfd_generator = DFDLLMGenerator(
-                    api_key=config.anthropic_api_key,
-                    model="claude-sonnet-4-20250514"
+                    api_key=config.anthropic_api_key, model="claude-sonnet-4-5"
                 )
 
                 # Generate structured data from the analysis
-                structured_data = dfd_generator.generate_structured_components(markdown_content)
+                structured_data = dfd_generator.generate_structured_components(
+                    markdown_content
+                )
 
                 if structured_data:
                     # Build diagram cells
                     builder = DFDBuilder(
                         components=structured_data["components"],
-                        flows=structured_data["flows"]
+                        flows=structured_data["flows"],
                     )
                     cells = builder.build_cells()
 
@@ -212,10 +221,12 @@ def analyze(
                     diagram = tmi_client.create_or_update_diagram(
                         threat_model_id=threat_model_id,
                         name=config.diagram_name,
-                        cells=cells
+                        cells=cells,
                     )
                     # Handle both dict and object responses
-                    diagram_id = diagram["id"] if isinstance(diagram, dict) else diagram.id
+                    diagram_id = (
+                        diagram["id"] if isinstance(diagram, dict) else diagram.id
+                    )
                     logger.info(f"Diagram created/updated successfully: {diagram_id}")
                     logger.info(f"Diagram contains {len(cells)} cells")
                 else:
@@ -312,8 +323,12 @@ def config_info():
         print(f"Clone Timeout: {config.clone_timeout}s")
         print(f"Note Name: {config.analysis_note_name}")
         print(f"Diagram Name: {config.diagram_name}")
-        print(f"GitHub Token: {'Configured' if config.github_token else 'Not configured'}")
-        print(f"Anthropic API Key: {'Configured' if config.anthropic_api_key else 'Not configured'}")
+        print(
+            f"GitHub Token: {'Configured' if config.github_token else 'Not configured'}"
+        )
+        print(
+            f"Anthropic API Key: {'Configured' if config.anthropic_api_key else 'Not configured'}"
+        )
         print(f"Cache Directory: {config.cache_dir}")
         print()
     except Exception as e:

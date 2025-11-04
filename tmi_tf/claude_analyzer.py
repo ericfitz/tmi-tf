@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 class TerraformAnalysis:
     """Result of Terraform analysis."""
 
-    def __init__(self, repo_name: str, repo_url: str, analysis_content: str, success: bool = True):
+    def __init__(
+        self, repo_name: str, repo_url: str, analysis_content: str, success: bool = True
+    ):
         """
         Initialize analysis result.
 
@@ -47,7 +49,7 @@ class ClaudeAnalyzer:
         """
         self.config = config
         self.client = Anthropic(api_key=config.anthropic_api_key)
-        self.model = "claude-sonnet-4-20250514"  # Claude Sonnet 4.5
+        self.model = "claude-sonnet-4-5"  # Claude Sonnet 4.5
 
         # Load prompts
         self.prompts_dir = Path(__file__).parent.parent / "prompts"
@@ -123,7 +125,9 @@ High-level summary of what this infrastructure does
 ## Mermaid Diagram
 Provide a mermaid diagram showing the architecture and relationships between components."""
 
-    def analyze_repository(self, terraform_repo: TerraformRepository) -> TerraformAnalysis:
+    def analyze_repository(
+        self, terraform_repo: TerraformRepository
+    ) -> TerraformAnalysis:
         """
         Analyze Terraform repository using Claude.
 
