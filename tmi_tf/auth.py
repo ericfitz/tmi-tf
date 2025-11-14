@@ -34,7 +34,9 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
         OAuthCallbackHandler.access_token = params.get("access_token", [None])[0]
         OAuthCallbackHandler.refresh_token = params.get("refresh_token", [None])[0]
         expires_in_str = params.get("expires_in", [None])[0]
-        OAuthCallbackHandler.expires_in = int(expires_in_str) if expires_in_str else None
+        OAuthCallbackHandler.expires_in = (
+            int(expires_in_str) if expires_in_str else None
+        )
         OAuthCallbackHandler.error = params.get("error", [None])[0]
 
         # Send response

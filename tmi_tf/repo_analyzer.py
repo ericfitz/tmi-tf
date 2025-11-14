@@ -193,7 +193,9 @@ class RepositoryAnalyzer:
             sparse_checkout_file.write_text("\n".join(patterns))
 
             # Pull with timeout
-            logger.info(f"Pulling repository content (timeout: {self.config.clone_timeout}s)")
+            logger.info(
+                f"Pulling repository content (timeout: {self.config.clone_timeout}s)"
+            )
             subprocess.run(
                 ["git", "pull", "--depth=1", "origin", "HEAD"],
                 cwd=clone_path,
@@ -224,7 +226,9 @@ class RepositoryAnalyzer:
             )
 
         except subprocess.TimeoutExpired:
-            logger.error(f"Clone timeout for {repo_name} after {self.config.clone_timeout}s")
+            logger.error(
+                f"Clone timeout for {repo_name} after {self.config.clone_timeout}s"
+            )
             raise
         except subprocess.CalledProcessError as e:
             logger.error(f"Git command failed for {repo_name}: {e.stderr.decode()}")
@@ -249,7 +253,9 @@ class RepositoryAnalyzer:
             return f"{parts[-2]}_{parts[-1]}"
         return "unknown_repo"
 
-    def should_analyze_repository(self, repo_url: str, max_size_kb: int = 500000) -> tuple[bool, str]:
+    def should_analyze_repository(
+        self, repo_url: str, max_size_kb: int = 500000
+    ) -> tuple[bool, str]:
         """
         Determine if repository should be analyzed based on size and other criteria.
 

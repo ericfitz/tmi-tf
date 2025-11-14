@@ -69,8 +69,11 @@ class DFDBuilder:
         Returns:
             List of AntV X6 v2 format cell objects
         """
-        logger.info("Building DFD cells from %d components and %d flows",
-                   len(self.components), len(self.flows))
+        logger.info(
+            "Building DFD cells from %d components and %d flows",
+            len(self.components),
+            len(self.flows),
+        )
 
         # Step 1: Create all node cells
         self._create_boundary_cells()
@@ -88,8 +91,11 @@ class DFDBuilder:
     def _create_boundary_cells(self):
         """Create security boundary cells for tenancy, container, and network components."""
         # Get boundary components (tenancy, container, network)
-        boundaries = [c for c in self.components
-                     if c["type"] in ["tenancy", "container", "network"]]
+        boundaries = [
+            c
+            for c in self.components
+            if c["type"] in ["tenancy", "container", "network"]
+        ]
 
         # Sort by hierarchy depth (tenancy first, then container, then network)
         boundaries.sort(key=lambda c: self._get_depth(c["id"]))
@@ -102,8 +108,11 @@ class DFDBuilder:
 
     def _create_node_cells(self):
         """Create node cells for gateway, compute, storage, and actor components."""
-        nodes = [c for c in self.components
-                if c["type"] in ["gateway", "compute", "storage", "actor"]]
+        nodes = [
+            c
+            for c in self.components
+            if c["type"] in ["gateway", "compute", "storage", "actor"]
+        ]
 
         for component in nodes:
             z_index = self.Z_INDEX.get(component["type"], 11)
@@ -116,7 +125,9 @@ class DFDBuilder:
             self.cells.append(cell)
             self.component_cells[component["id"]] = cell
 
-    def _create_node_cell(self, component: Dict[str, Any], z_index: int) -> Dict[str, Any]:
+    def _create_node_cell(
+        self, component: Dict[str, Any], z_index: int
+    ) -> Dict[str, Any]:
         """
         Create a single node cell.
 
@@ -133,7 +144,9 @@ class DFDBuilder:
         # Determine if this is a boundary (needs larger default size)
         is_boundary = component["type"] in ["tenancy", "container", "network"]
         width = self.DEFAULT_BOUNDARY_WIDTH if is_boundary else self.DEFAULT_NODE_WIDTH
-        height = self.DEFAULT_BOUNDARY_HEIGHT if is_boundary else self.DEFAULT_NODE_HEIGHT
+        height = (
+            self.DEFAULT_BOUNDARY_HEIGHT if is_boundary else self.DEFAULT_NODE_HEIGHT
+        )
 
         cell = {
             "id": cell_id,
@@ -145,9 +158,7 @@ class DFDBuilder:
             "zIndex": z_index,
             "attrs": {
                 "body": self._get_body_attrs(component["type"]),
-                "text": {
-                    "text": component["name"]
-                }
+                "text": {"text": component["name"]},
             },
             "data": {
                 "_metadata": [
@@ -155,7 +166,7 @@ class DFDBuilder:
                     {"key": "component_type", "value": component["type"]},
                     {"key": "component_subtype", "value": component.get("subtype", "")},
                 ]
-            }
+            },
         }
 
         # Set parent relationship for nested components
@@ -174,30 +185,38 @@ class DFDBuilder:
 
             if flow.get("bidirectional", False):
                 # Create two edges for bidirectional flow
-                edges_to_create.append({
-                    "source_id": flow["source_id"],
-                    "target_id": flow["target_id"],
-                    "label": f"{flow['name']} →"
-                })
-                edges_to_create.append({
-                    "source_id": flow["target_id"],
-                    "target_id": flow["source_id"],
-                    "label": f"{flow['name']} ←"
-                })
+                edges_to_create.append(
+                    {
+                        "source_id": flow["source_id"],
+                        "target_id": flow["target_id"],
+                        "label": f"{flow['name']} →",
+                    }
+                )
+                edges_to_create.append(
+                    {
+                        "source_id": flow["target_id"],
+                        "target_id": flow["source_id"],
+                        "label": f"{flow['name']} ←",
+                    }
+                )
             else:
                 # Single unidirectional edge
-                edges_to_create.append({
-                    "source_id": flow["source_id"],
-                    "target_id": flow["target_id"],
-                    "label": flow["name"]
-                })
+                edges_to_create.append(
+                    {
+                        "source_id": flow["source_id"],
+                        "target_id": flow["target_id"],
+                        "label": flow["name"],
+                    }
+                )
 
             for edge_data in edges_to_create:
                 edge = self._create_edge_cell(edge_data, flow)
                 if edge:
                     self.cells.append(edge)
 
-    def _create_edge_cell(self, edge_data: Dict[str, str], flow: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _create_edge_cell(
+        self, edge_data: Dict[str, str], flow: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """
         Create a single edge cell.
 
@@ -212,8 +231,10 @@ class DFDBuilder:
         target_cell = self.component_cells.get(edge_data["target_id"])
 
         if not source_cell or not target_cell:
-            logger.warning("Skipping flow %s: source or target component not found",
-                         flow.get("id", "unknown"))
+            logger.warning(
+                "Skipping flow %s: source or target component not found",
+                flow.get("id", "unknown"),
+            )
             return None
 
         cell_id = str(uuid.uuid4())
@@ -242,28 +263,12 @@ class DFDBuilder:
                 "line": {
                     "stroke": "#333333",
                     "strokeWidth": 2,
-                    "targetMarker": {
-                        "name": "block",
-                        "width": 12,
-                        "height": 8
-                    }
+                    "targetMarker": {"name": "block", "width": 12, "height": 8},
                 }
             },
-            "labels": [
-                {
-                    "attrs": {
-                        "text": {
-                            "text": label_text
-                        }
-                    }
-                }
-            ],
-            "router": {
-                "name": "manhattan"
-            },
-            "connector": {
-                "name": "rounded"
-            }
+            "labels": [{"attrs": {"text": {"text": label_text}}}],
+            "router": {"name": "manhattan"},
+            "connector": {"name": "rounded"},
         }
 
         # Add ports if available
@@ -282,14 +287,11 @@ class DFDBuilder:
             Port configuration object
         """
         return {
-            "groups": {
-                "in": {"position": "left"},
-                "out": {"position": "right"}
-            },
+            "groups": {"in": {"position": "left"}, "out": {"position": "right"}},
             "items": [
                 {"id": "port-in", "group": "in"},
-                {"id": "port-out", "group": "out"}
-            ]
+                {"id": "port-out", "group": "out"},
+            ],
         }
 
     def _get_port(self, cell: Dict[str, Any], direction: str) -> Optional[str]:
@@ -347,7 +349,9 @@ class DFDBuilder:
             Z-index value
         """
         depth = self._get_depth(component["id"])
-        return self.Z_INDEX["boundary_base"] + (depth * self.Z_INDEX["boundary_increment"])
+        return self.Z_INDEX["boundary_base"] + (
+            depth * self.Z_INDEX["boundary_increment"]
+        )
 
     def _get_depth(self, component_id: str) -> int:
         """
@@ -422,7 +426,9 @@ class DFDBuilder:
 
         if is_boundary:
             # Calculate grid layout for children
-            child_positions = self._calculate_grid_layout(children, x, y, cell["width"], cell["height"])
+            child_positions = self._calculate_grid_layout(
+                children, x, y, cell["width"], cell["height"]
+            )
 
             # Position each child
             for child, (child_x, child_y) in zip(children, child_positions):
@@ -431,9 +437,14 @@ class DFDBuilder:
             # Adjust boundary size to fit all children
             self._resize_boundary_to_fit_children(cell, children)
 
-    def _calculate_grid_layout(self, children: List[Dict[str, Any]],
-                               parent_x: int, parent_y: int,
-                               parent_width: int, parent_height: int) -> List[Tuple[int, int]]:
+    def _calculate_grid_layout(
+        self,
+        children: List[Dict[str, Any]],
+        parent_x: int,
+        parent_y: int,
+        parent_width: int,
+        parent_height: int,
+    ) -> List[Tuple[int, int]]:
         """
         Calculate grid layout positions for children within a parent.
 
@@ -452,7 +463,7 @@ class DFDBuilder:
 
         # Calculate grid dimensions
         num_children = len(children)
-        cols = max(1, int((num_children ** 0.5) + 0.5))  # Square root rounded up
+        cols = max(1, int((num_children**0.5) + 0.5))  # Square root rounded up
         rows = (num_children + cols - 1) // cols  # Ceiling division
 
         # Calculate available space
@@ -468,15 +479,24 @@ class DFDBuilder:
             row = i // cols
             col = i % cols
 
-            x = parent_x + self.BOUNDARY_PADDING + col * (cell_width + self.NODE_SPACING)
-            y = parent_y + self.BOUNDARY_PADDING + row * (cell_height + self.NODE_SPACING)
+            x = (
+                parent_x
+                + self.BOUNDARY_PADDING
+                + col * (cell_width + self.NODE_SPACING)
+            )
+            y = (
+                parent_y
+                + self.BOUNDARY_PADDING
+                + row * (cell_height + self.NODE_SPACING)
+            )
 
             positions.append((x, y))
 
         return positions
 
-    def _resize_boundary_to_fit_children(self, boundary_cell: Dict[str, Any],
-                                         children: List[Dict[str, Any]]):
+    def _resize_boundary_to_fit_children(
+        self, boundary_cell: Dict[str, Any], children: List[Dict[str, Any]]
+    ):
         """
         Resize a boundary to fit all its children with padding.
 
@@ -488,10 +508,10 @@ class DFDBuilder:
             return
 
         # Find bounding box of all children
-        min_x = float('inf')
-        min_y = float('inf')
-        max_x = float('-inf')
-        max_y = float('-inf')
+        min_x = float("inf")
+        min_y = float("inf")
+        max_x = float("-inf")
+        max_y = float("-inf")
 
         for child in children:
             child_cell = self.component_cells.get(child["id"])
@@ -509,4 +529,6 @@ class DFDBuilder:
 
         # Ensure minimum size
         boundary_cell["width"] = max(required_width, self.DEFAULT_BOUNDARY_WIDTH // 2)
-        boundary_cell["height"] = max(required_height, self.DEFAULT_BOUNDARY_HEIGHT // 2)
+        boundary_cell["height"] = max(
+            required_height, self.DEFAULT_BOUNDARY_HEIGHT // 2
+        )

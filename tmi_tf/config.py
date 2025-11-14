@@ -24,7 +24,10 @@ class Config:
 
         # Claude API Configuration
         self.anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
-        if not self.anthropic_api_key or self.anthropic_api_key == "placeholder_anthropic_api_key":
+        if (
+            not self.anthropic_api_key
+            or self.anthropic_api_key == "placeholder_anthropic_api_key"
+        ):
             raise ValueError(
                 "ANTHROPIC_API_KEY not configured. "
                 "Please set it in .env file with your actual API key."

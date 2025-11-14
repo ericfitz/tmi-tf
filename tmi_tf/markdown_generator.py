@@ -35,7 +35,9 @@ class MarkdownGenerator:
         sections = []
 
         # Header
-        sections.append(self._generate_header(threat_model_name, threat_model_id, analyses))
+        sections.append(
+            self._generate_header(threat_model_name, threat_model_id, analyses)
+        )
 
         # Executive Summary
         sections.append(self._generate_executive_summary(analyses))
@@ -52,7 +54,10 @@ class MarkdownGenerator:
         return "\n\n---\n\n".join(sections)
 
     def _generate_header(
-        self, threat_model_name: str, threat_model_id: str, analyses: List[TerraformAnalysis]
+        self,
+        threat_model_name: str,
+        threat_model_id: str,
+        analyses: List[TerraformAnalysis],
     ) -> str:
         """Generate report header."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
