@@ -36,6 +36,18 @@ dev = [
     "pyright>=1.1.407",
 ]
 
+[tool.ruff.lint]
+# Ruff 0.16 widened its implicit default rule set (pyupgrade, isort, bandit,
+# blind-except, ...). This project had no ruff config and so silently rode the
+# pre-0.16 default; pin that same set explicitly so lint results no longer move
+# when ruff changes its defaults.
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.format]
+# Ruff 0.16 began formatting Python code blocks embedded in Markdown. These docs
+# are prose, not formatter-managed source, so keep the formatter on Python only.
+exclude = ["*.md"]
+
 [tool.pyright]
 # tmi_client is added to sys.path at runtime from ~/Projects/tmi-clients/
 # and cannot be resolved statically; imports are suppressed per-line
