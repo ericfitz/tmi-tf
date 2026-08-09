@@ -36,6 +36,13 @@ dev = [
     "pyright>=1.1.407",
 ]
 
+[tool.uv]
+# oci declares cryptography<50.0.0, but it only uses cryptography for RSA signing
+# and does not touch the interfaces that changed in 50.0.0. Override the cap so
+# cryptography can reach 50.0.0, which fixes PYSEC-2026-3552 (PKCS#7 EnvelopedData
+# Bleichenbacher oracle). Revisit once oci relaxes its own bound.
+override-dependencies = ["cryptography>=50.0.0"]
+
 [tool.ruff.lint]
 # Ruff 0.16 widened its implicit default rule set (pyupgrade, isort, bandit,
 # blind-except, ...). This project had no ruff config and so silently rode the
