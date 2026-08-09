@@ -513,7 +513,10 @@ Return JSON with this structure:
                 ),
             )
 
-            # Track token usage
+            # Track token usage.
+            # Read from response.usage: authoritative, already in the payload, and
+            # consistent with completion_cost() below. See the full note in
+            # llm_analyzer._call_llm on what changing this method would cost.
             usage = getattr(response, "usage", None)
             if usage:
                 self.input_tokens += getattr(usage, "prompt_tokens", 0) or 0
@@ -725,7 +728,10 @@ Keep the summary concise (under 400 words) but insightful."""
                 ),
             )
 
-            # Track token usage
+            # Track token usage.
+            # Read from response.usage: authoritative, already in the payload, and
+            # consistent with completion_cost() below. See the full note in
+            # llm_analyzer._call_llm on what changing this method would cost.
             usage = getattr(response, "usage", None)
             if usage:
                 self.input_tokens += getattr(usage, "prompt_tokens", 0) or 0

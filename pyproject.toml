@@ -16,7 +16,6 @@ dependencies = [
     "setuptools>=83.0.0",
     "urllib3>=2.7.0",
     "google-auth>=2.45.0",
-    "google-cloud-aiplatform>=1.132.0",
     "litellm>=1.83.10",
     "nh3>=0.3.3",
     "oci>=2.168.2",

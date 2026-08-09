@@ -511,7 +511,34 @@ class LLMAnalyzer:
             description=f"Phase {phase_name}",
         )
 
-        # Extract token usage
+        # Extract token usage.
+        #
+        # Counts come from the provider's own response.usage. This is the cheapest and
+        # most accurate option available: the numbers are authoritative (they are what
+        # the provider bills on) and they are already in the payload we just received,
+        # so they cost no extra call and no extra dependency. litellm.completion_cost()
+        # below reads the same response, so cost and tokens can never disagree.
+        #
+        # Impact of switching to a different method, for anyone tempted:
+        #
+        #   * litellm.token_counter(model=..., messages=...) — local tiktoken-style
+        #     estimate. No network, no new dependency, but it is an APPROXIMATION of
+        #     the prompt only, and yields no completion-token count at all, so cost
+        #     accounting would drift from what the provider actually charges.
+        #   * litellm.acount_tokens(model=..., messages=...) — provider-native counter.
+        #     Costs an extra round-trip per call, and still only counts the prompt. For
+        #     "gemini/*" it currently falls back to the local tokenizer anyway
+        #     (tokenizer_type='local_tokenizer'), so the round-trip buys nothing here.
+        #
+        # Dependency note: neither of the above pulls in extra packages. The one path
+        # that does is the Google-native countTokens passthrough, which supplies
+        # `contents=` rather than `messages=`; that reaches
+        # GoogleAIStudioTokenCounter._clean_contents_for_gemini_api, whose lazy
+        # `from google.genai.types import FunctionResponse` would require google-genai
+        # again. In practice that path is only reached through litellm's proxy server,
+        # which this project does not run. google-genai arrived here via
+        # google-cloud-aiplatform, which was dropped deliberately — it brought 18
+        # packages, including protobuf and grpcio, and capped protobuf<7.0.0.
         usage = getattr(response, "usage", None)
         tokens_in = usage.prompt_tokens if usage else 0
         tokens_out = usage.completion_tokens if usage else 0
